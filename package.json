@@ -10,11 +10,13 @@
     "strapi": "strapi"
   },
   "dependencies": {
-    "@strapi/plugin-i18n": "4.7.0",
     "@strapi/plugin-graphql": "4.6.1",
-    "@strapi/strapi": "4.7.0", 
+    "@strapi/plugin-i18n": "4.7.0",
     "@strapi/plugin-users-permissions": "4.7.0",
+    "@strapi/strapi": "4.7.0",
     "better-sqlite3": "7.4.6",
+    "pg": "^8.11.3",
+    "pg-connection-string": "^2.6.2",
     "strapi-plugin-publisher": "^1.2.0"
   },
   "resolutions": {
