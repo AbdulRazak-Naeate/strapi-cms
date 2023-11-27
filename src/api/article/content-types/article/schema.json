@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "articles",
+  "info": {
+    "singularName": "article",
+    "pluralName": "articles",
+    "displayName": "Article",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "richtext"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "date_created": {
+      "type": "datetime"
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "mappedBy": "articles"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "author": {
+      "type": "string",
+      "required": false,
+      "default": "Abdul Razak Abubakari"
+    },
+    "likes": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

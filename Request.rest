@@ -1,0 +1,13 @@
+###
+GET http://localhost:1337/api/articles?populate=*
+###
+GET http://localhost:1337/api/articles?populate=image
+###
+GET http://localhost:1337/api/articles/1?populate=* 
+###
+PUT http://localhost:1337/api/articles/1?
+{
+  "data": {
+      "likes": 1
+  }
+}
