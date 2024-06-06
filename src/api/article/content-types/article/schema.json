@@ -79,6 +79,16 @@
           "localized": true
         }
       }
+    },
+    "Excerpt": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "richtext",
+      "required": false,
+      "maxLength": 100
     }
   }
 }
