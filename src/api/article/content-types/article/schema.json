@@ -16,7 +16,7 @@
     }
   },
   "attributes": {
-    "description": {
+    "content": {
       "type": "richtext",
       "pluginOptions": {
         "i18n": {
