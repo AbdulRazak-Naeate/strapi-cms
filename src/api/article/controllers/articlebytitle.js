@@ -13,7 +13,7 @@ module.exports = createCoreController('api::article.article', ({ strapi }) => ({
       const { title,populate } = ctx.query;
       // Define the fields to populate
     const populateFields = 
-    ['description','image', 'date_created','categories','title','author','likes','attributes']; 
+    ['content','image', 'date_created','categories','title','author','likes','attributes']; 
 
       console.log(title)
       const entity = await strapi.db.query('api::article.article').findOne({
