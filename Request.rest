@@ -13,3 +13,13 @@ PUT http://localhost:1337/api/articles/1?
       "likes": 1
   }
 }
+
+###
+# AI Article Generator - Generate 1 article for a random category
+POST http://localhost:1600/api/ai-articles/generate?count=1
+Authorization: Bearer bc285a595117765466455b57db6aea1add3c9480b36162b530d5001cb5736652991f4eb057d078b4110f56a6902a9030e4723b9806eeba085246a8747a17ee2cf063a25906b7b0a6019e7853ad2f663f5f3b98700dc2331c70cccdfc74dbbff53411bcf510d7c4e783b1aae2bb364e25e5d403669767f372be8dae02e3acfca9
+
+###
+# AI Article Generator - Generate for a specific category (replace 1 with category ID)
+POST http://localhost:1600/api/ai-articles/generate?categoryId=1&count=1
+Authorization: Bearer bc285a595117765466455b57db6aea1add3c9480b36162b530d5001cb5736652991f4eb057d078b4110f56a6902a9030e4723b9806eeba085246a8747a17ee2cf063a25906b7b0a6019e7853ad2f663f5f3b98700dc2331c70cccdfc74dbbff53411bcf510d7c4e783b1aae2bb364e25e5d403669767f372be8dae02e3acfca9

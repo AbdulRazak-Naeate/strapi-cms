@@ -12,6 +12,9 @@ importers:
 
   .:
     dependencies:
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@strapi/plugin-email':
         specifier: 4.7.0
         version: 4.7.0
@@ -33,6 +36,9 @@ importers:
       '@strapi/strapi':
         specifier: 4.7.0
         version: 4.7.0(@strapi/design-system@1.6.3(@babel/runtime@7.28.6)(@strapi/icons@1.6.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@types/react@18.3.28)(react-dom@17.0.2(react@17.0.2))(react-router-dom@5.3.4(react@17.0.2))(react@17.0.2)(styled-components@5.3.3(react-dom@17.0.2(react@17.0.2))(react-is@17.0.2)(react@17.0.2)))(@strapi/icons@1.6.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@types/hoist-non-react-statics@3.3.7(@types/react@18.3.28))(@types/node@25.2.2)(@types/react@18.3.28)(pg@8.18.0)(redux@4.2.1)(styled-components@5.3.3(react-dom@17.0.2(react@17.0.2))(react-is@17.0.2)(react@17.0.2))(type-fest@2.19.0)(typescript@4.6.2)
+      openai:
+        specifier: ^7.4.0
+        version: 7.4.0(ws@8.19.0)
       pg:
         specifier: ^8.11.3
         version: 8.18.0
@@ -980,6 +986,10 @@ packages:
   '@google-cloud/storage@7.19.0':
     resolution: {integrity: sha512-n2FjE7NAOYyshogdc7KQOl/VZb4sneqPjWouSyia9CMDdMhRX5+RIbqalNmC7LOLzuLAN89VlF2HvG8na9G+zQ==}
     engines: {node: '>=14'}
+
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
 
   '@graphql-tools/merge@8.3.1':
     resolution: {integrity: sha512-BMm99mqdNZbEYeTPK3it9r9S6rsZsQKtlqJsSBknAclXq2pGEfOxjcIZi+kBSkHZKPKCRrYDd5vY0+rUmIHVLg==}
@@ -4571,6 +4581,27 @@ packages:
     resolution: {integrity: sha512-XgFPPM+B28FtCCgSb9I+s9szOC1vZRSwgWsRUA5ylIxRTgKozqjOCrVOqGsYABPYK5qnfqClxZTFBa8PKt2v6Q==}
     engines: {node: '>=12'}
 
+  openai@7.4.0:
+    resolution: {integrity: sha512-+C9Muit5x8j9R8ej8ZzVgKcrVDtqFqTy9gxFdov0EItLgU68zrJtF9ZeT0cyqJQW9S3PCJkdFgADtRGquRBtew==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   ora@3.4.0:
     resolution: {integrity: sha512-eNwHudNbO1folBP3JsZ19v9azXWtQZjICdr3Q0TDPIaeBQ3mXLrh54wM+er0+hSp+dWKf+Z8KM58CYzEyIYxYg==}
     engines: {node: '>=6'}
@@ -7387,6 +7418,8 @@ snapshots:
       - encoding
       - supports-color
     optional: true
+
+  '@google/generative-ai@0.24.1': {}
 
   '@graphql-tools/merge@8.3.1(graphql@14.7.0)':
     dependencies:
@@ -11882,6 +11915,10 @@ snapshots:
       define-lazy-prop: 2.0.0
       is-docker: 2.2.1
       is-wsl: 2.2.0
+
+  openai@7.4.0(ws@8.19.0):
+    optionalDependencies:
+      ws: 8.19.0
 
   ora@3.4.0:
     dependencies:
