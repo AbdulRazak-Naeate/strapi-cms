@@ -42,5 +42,8 @@
     "node": "v18.18.2",
     "npm": "10.2.4"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
 }
