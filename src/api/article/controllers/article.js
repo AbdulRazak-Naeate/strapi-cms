@@ -24,6 +24,22 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 		return response;
 	},
 
+	async limitedAttributes(ctx) {
+		const { title } = ctx.query;
+		const populateFields = ['content', 'image', 'title'];
+
+		const entity = await strapi.db.query(ARTICLE_UID).findOne({
+			where: { title },
+			populate: populateFields,
+		});
+
+		if (!entity) {
+			return ctx.notFound('Article not found');
+		}
+
+		return this.sanitizeOutput(entity, ctx);
+	},
+
 	async likeArticle(ctx) {
 		const user = ctx.state.user;
 		const articleId = Number(ctx.params.id);
