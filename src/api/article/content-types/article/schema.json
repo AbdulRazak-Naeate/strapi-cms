@@ -80,6 +80,18 @@
         }
       }
     },
+    "articleLikes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::article-like.article-like",
+      "mappedBy": "article"
+    },
+    "userActivities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-activity.user-activity",
+      "mappedBy": "article"
+    },
     "Excerpt": {
       "pluginOptions": {
         "i18n": {

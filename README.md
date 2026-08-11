@@ -58,3 +58,13 @@ Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/
 
 <sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
 npm run strapi admin:reset-user-password --email="ab@gmail.com" --password="password"
+
+
+user 1
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzg2NDQzODc4LCJleHAiOjE3ODkwMzU4Nzh9.MSDYjNwiB9hFo9qrv9Y2gg5o6Ds_FmVDcy-SujS6CYA"
+user 2 
+
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiaWF0IjoxNzg2NDQ2MTM4LCJleHAiOjE3ODkwMzgxMzh9.SuO8yFEXLuh7714w4iSDSGaqOQrsbgXUSWoUwGW10fU"
+
+usrer 3
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzg2NDQ2Nzg0LCJleHAiOjE3ODkwMzg3ODR9.55FdhTzPF8owLjbceoOiZ9uQb6fQZd6yvOqyKtzTDW8"

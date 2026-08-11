@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "article_likes",
+  "info": {
+    "singularName": "article-like",
+    "pluralName": "article-likes",
+    "displayName": "Article Like",
+    "description": "Stores one like per user and article"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "article": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::article.article",
+      "inversedBy": "articleLikes"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

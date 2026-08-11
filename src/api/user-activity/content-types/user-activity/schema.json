@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_activities",
+  "info": {
+    "singularName": "user-activity",
+    "pluralName": "user-activities",
+    "displayName": "User Activity",
+    "description": "Tracks article interactions by users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "actionType": {
+      "type": "enumeration",
+      "enum": [
+        "liked",
+        "unliked",
+        "created",
+        "viewed",
+        "shared"
+      ],
+      "required": true
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "article": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::article.article",
+      "inversedBy": "userActivities"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
