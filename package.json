@@ -21,7 +21,7 @@
     "openai": "^7.4.0",
     "pg": "^8.11.3",
     "pg-connection-string": "^2.6.2",
-    "sharp": "^0.33.5",
+    "sharp": "0.32.6",
     "strapi-plugin-fcm": "^1.1.0"
   },
   "resolutions": {
@@ -29,7 +29,7 @@
   },
   "pnpm": {
     "overrides": {
-      "sharp": "^0.33.5"
+      "sharp": "0.32.6"
     }
   },
   "author": {
