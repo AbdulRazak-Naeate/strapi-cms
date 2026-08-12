@@ -5,6 +5,7 @@ module.exports = {
       path: '/articles/:id/like',
       handler: 'article.likeArticle',
       config: {
+        auth: false,
         policies: [],
         middlewares: [],
       },
@@ -14,6 +15,7 @@ module.exports = {
       path: '/articles/:id/like',
       handler: 'article.unlikeArticle',
       config: {
+        auth: false,
         policies: [],
         middlewares: [],
       },
@@ -23,6 +25,7 @@ module.exports = {
       path: '/articles/:id/like-status',
       handler: 'article.likeStatus',
       config: {
+        auth: false,
         policies: [],
         middlewares: [],
       },

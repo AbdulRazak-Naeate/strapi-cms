@@ -43,13 +43,15 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 	async likeArticle(ctx) {
 		const user = ctx.state.user;
 		const articleId = Number(ctx.params.id);
-
-		if (!user) {
-			return ctx.unauthorized('Authentication required');
-		}
+		// anonymous clients must send a stable identifier to be able to unlike later
+		const identifier = ctx.request.body?.identifier || ctx.request.ip;
 
 		if (!articleId) {
 			return ctx.badRequest('Invalid article id');
+		}
+
+		if (!user && !identifier) {
+			return ctx.badRequest('identifier is required for anonymous likes');
 		}
 
 		const article = await strapi.entityService.findOne(ARTICLE_UID, articleId, {
@@ -60,24 +62,20 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 			return ctx.notFound('Article not found');
 		}
 
-		const existingLike = await strapi.db.query(ARTICLE_LIKE_UID).findOne({
-			where: {
-				article: articleId,
-				user: user.id,
-			},
-		});
+		const where = user ? { article: articleId, user: user.id } : { article: articleId, identifier };
+
+		const existingLike = await strapi.db.query(ARTICLE_LIKE_UID).findOne({ where });
 
 		if (!existingLike) {
 			await strapi.entityService.create(ARTICLE_LIKE_UID, {
-				data: {
-					article: articleId,
-					user: user.id,
-				},
+				data: user ? { article: articleId, user: user.id } : { article: articleId, identifier },
 			});
 
-			await strapi
-				.service('api::user-activity.user-activity')
-				.logActivity({ userId: user.id, articleId, actionType: 'liked' });
+			if (user) {
+				await strapi
+					.service('api::user-activity.user-activity')
+					.logActivity({ userId: user.id, articleId, actionType: 'liked' });
+			}
 		}
 
 		const likesCount = await strapi.db.query(ARTICLE_LIKE_UID).count({
@@ -104,28 +102,28 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 	async unlikeArticle(ctx) {
 		const user = ctx.state.user;
 		const articleId = Number(ctx.params.id);
-
-		if (!user) {
-			return ctx.unauthorized('Authentication required');
-		}
+		const identifier = ctx.request.body?.identifier || ctx.request.ip;
 
 		if (!articleId) {
 			return ctx.badRequest('Invalid article id');
 		}
 
-		const existingLike = await strapi.db.query(ARTICLE_LIKE_UID).findOne({
-			where: {
-				article: articleId,
-				user: user.id,
-			},
-		});
+		if (!user && !identifier) {
+			return ctx.badRequest('identifier is required for anonymous unlikes');
+		}
+
+		const where = user ? { article: articleId, user: user.id } : { article: articleId, identifier };
+
+		const existingLike = await strapi.db.query(ARTICLE_LIKE_UID).findOne({ where });
 
 		if (existingLike) {
 			await strapi.entityService.delete(ARTICLE_LIKE_UID, existingLike.id);
 
-			await strapi
-				.service('api::user-activity.user-activity')
-				.logActivity({ userId: user.id, articleId, actionType: 'unliked' });
+			if (user) {
+				await strapi
+					.service('api::user-activity.user-activity')
+					.logActivity({ userId: user.id, articleId, actionType: 'unliked' });
+			}
 		}
 
 		const likesCount = await strapi.db.query(ARTICLE_LIKE_UID).count({
@@ -151,6 +149,7 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 
 	async likeStatus(ctx) {
 		const userId = ctx.state.user?.id;
+		const identifier = ctx.query.identifier || ctx.request.ip;
 		const articleId = Number(ctx.params.id);
 
 		if (!articleId) {
@@ -163,23 +162,14 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 			},
 		});
 
-		let liked = false;
+		const where = userId ? { article: articleId, user: userId } : { article: articleId, identifier };
 
-		if (userId) {
-			const like = await strapi.db.query(ARTICLE_LIKE_UID).findOne({
-				where: {
-					article: articleId,
-					user: userId,
-				},
-			});
-
-			liked = Boolean(like);
-		}
+		const like = await strapi.db.query(ARTICLE_LIKE_UID).findOne({ where });
 
 		return {
 			data: {
 				articleId,
-				liked,
+				liked: Boolean(like),
 				likesCount,
 			},
 		};
