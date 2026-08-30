@@ -5,7 +5,7 @@ module.exports = ({ env }) => ({
     proxy: true,
     host: "0.0.0.0",
     port: process.env.PORT,
-    url: env('PUBLIC_URL', 'https://naeatestudio-cms.herokuapp.com/'),
+    url: env('PUBLIC_URL', 'https://naeatestudio-cms-f6767b576785.herokuapp.com'),
     app: { 
       keys: env.array('APP_KEYS')
     },
