@@ -69,3 +69,18 @@ user 2
 
 usrer 3
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzg2NDQ2Nzg0LCJleHAiOjE3ODkwMzg3ODR9.55FdhTzPF8owLjbceoOiZ9uQb6fQZd6yvOqyKtzTDW8"
+
+freebuff --continue 2026-08-30T08-05-25.329Z
+
+
+
+
+The strapi endpoint has like/unlike methods Update the article page to allow users to like and unlike an article. their identifier is userdevice id 
+
+Why the identifier field is needed
+Without a logged-in user, Strapi has no way to tell one anonymous caller from another. The client (browser/app) should generate and persist a stable id (e.g. a random UUID stored in localStorage) and send it as identifier in the request body/query, so repeat likes/unlikes from the same device are deduped and idempotent.
+
+ without any Authorization header:
+POST http://localhost:1600/api/articles/1/like body: { "identifier": "device-abc-123" }
+GET http://localhost:1600/api/articles/1/like-status?identifier=device-abc-123
+DELETE http://localhost:1600/api/articles/1/like body: { "identifier": "device-abc-123" }
