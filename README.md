@@ -73,7 +73,7 @@ usrer 3
 freebuff --continue 2026-08-30T08-05-25.329Z
 
 
-
+optimize api performance ,add pagination defualts or 
 
 The strapi endpoint has like/unlike methods Update the article page to allow users to like and unlike an article. their identifier is userdevice id 
 
@@ -84,3 +84,13 @@ Without a logged-in user, Strapi has no way to tell one anonymous caller from an
 POST http://localhost:1600/api/articles/1/like body: { "identifier": "device-abc-123" }
 GET http://localhost:1600/api/articles/1/like-status?identifier=device-abc-123
 DELETE http://localhost:1600/api/articles/1/like body: { "identifier": "device-abc-123" }
+
+Trigger AI article generation:
+
+GET http://localhost:1600/api/ai-articles/generate?categoryId=1&count=1
+
+
+
+style="background-image: url(&quot;https://res.cloudinary.com/dmpx1iv0m/image/upload/f_auto/q_auto/fl_lossy/v1/products/daabia-mall-product-Samsung-A03-core-0?_a=BATAUVAA0&quot;);"
+
+ myCld.image(`/${pid}`).format('auto').quality('auto').addFlag('lossy').toURL()

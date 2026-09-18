@@ -1,0 +1,101 @@
+'use strict';
+
+/**
+ * Extends the Upload plugin so every Cloudinary file gets a "lossy" flag in its
+ * stored URL:
+ *
+ *   .../upload/.../photo.jpg  →  .../upload/f_auto,q_auto/.../photo.jpg
+ *
+ * - `f_auto` → Cloudinary picks the best supported format per browser (webp/avif/jpg)
+ * - `q_auto` → quality is optimized automatically (lossy, smallest good-looking size)
+ *
+ * The transform is a URL segment only — Cloudinary still serves the ORIGINAL
+ * asset, so nothing is destructively re-encoded.
+ */
+
+const TRANSFORM = 'f_auto,q_auto';
+// Match the "/upload/" delivery segment (also matches nested folders / raw assets).
+const UPLOAD_SEGMENT = /\/upload\//;
+
+function applyLossyTransform(url) {
+  if (
+    typeof url === 'string' &&
+    !url.includes(`/${TRANSFORM}/`) &&
+    UPLOAD_SEGMENT.test(url)
+  ) {
+    return url.replace(UPLOAD_SEGMENT, `/upload/${TRANSFORM}/`);
+  }
+  return url;
+}
+
+function transformJsonField(value) {
+  if (value === undefined || value === null) return value;
+  try {
+    const str = typeof value === 'string' ? value : JSON.stringify(value);
+    return JSON.parse(applyLossyTransform(str));
+  } catch (e) {
+    return value;
+  }
+}
+
+module.exports = (plugin) => {
+  // Inside the plugin object, content-types are keyed by their short name
+  // ("file"), not the full UID ("plugin::upload.file").
+  const fileCTKey = Object.keys(plugin.contentTypes || {}).find((key) => {
+    const ct = plugin.contentTypes[key];
+    return ct?.schema?.info?.singularName === 'file' || key === 'file';
+  });
+
+  if (!fileCTKey) {
+    strapi?.log?.warn?.('upload extension: file content-type not found, skipping');
+    return plugin;
+  }
+
+  const clearCache = () => {
+    try {
+      require('../../api/article/utils/response-cache').clear('articles-find');
+    } catch (e) {
+      // article cache helper not present — ignore
+    }
+  };
+
+  const originalLifecycles = plugin.contentTypes[fileCTKey].lifecycles;
+
+  plugin.contentTypes[fileCTKey].lifecycles = {
+    async beforeCreate(event) {
+      const { data } = event.params;
+      if (data.url) data.url = applyLossyTransform(data.url);
+      if (data.previewUrl) data.previewUrl = applyLossyTransform(data.previewUrl);
+      if (data.formats) data.formats = transformJsonField(data.formats);
+    },
+
+    async beforeUpdate(event) {
+      const { data } = event.params;
+      // Only rewrites when the URL itself is being set (e.g. re-upload / replace)
+      if (data.url) data.url = applyLossyTransform(data.url);
+      if (data.previewUrl) data.previewUrl = applyLossyTransform(data.previewUrl);
+      if (data.formats) data.formats = transformJsonField(data.formats);
+    },
+
+    async afterCreate() {
+      clearCache();
+    },
+
+    async afterUpdate() {
+      clearCache();
+    },
+
+    async afterDelete() {
+      clearCache();
+    },
+
+    async afterDeleteMany() {
+      clearCache();
+    },
+
+    // Preserve any lifecycles that already existed on the plugin
+    ...(originalLifecycles && typeof originalLifecycles === 'object' ? originalLifecycles : {}),
+  };
+
+  return plugin;
+};

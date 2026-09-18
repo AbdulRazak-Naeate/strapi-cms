@@ -112,25 +112,76 @@ module.exports = ({ strapi }) => {
     return parsed;
   }
 
-  function buildPrompts(categoryTitle) {
-    const wordCount = parseInt(process.env.AI_ARTICLE_WORD_COUNT || '800', 10);
+  async function getRecentArticleContext(categoryTitle) {
+    const recentArticles = await strapi.db.query('api::article.article').findMany({
+      where: {
+        categories: {
+          title: categoryTitle,
+        },
+      },
+      select: ['title', 'Excerpt', 'date_created'],
+      orderBy: { createdAt: 'desc' },
+      limit: 12,
+    });
+
+    if (!recentArticles.length) {
+      return 'No recent articles are available for comparison. Choose a genuinely newsworthy angle rather than a generic overview.';
+    }
+
+    return recentArticles
+      .map((article, index) => {
+        const excerpt = article.Excerpt ? `: ${article.Excerpt}` : '';
+        return `${index + 1}. ${article.title}${excerpt}`;
+      })
+      .join('\n');
+  }
+
+  async function buildPrompts(categoryTitle) {
+    const wordCount = parseInt(process.env.AI_ARTICLE_WORD_COUNT || '1500', 10);
     const today = new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
+    const recentArticleContext = await getRecentArticleContext(categoryTitle);
 
-    const systemPrompt = `You are a professional journalist and content writer. You write authoritative, well-researched, and engaging articles. Your writing is clear, informative, and avoids generic filler content. You produce publication-ready HTML content.`;
+    const systemPrompt = `You are a professional journalist, investigative technology writer, and cryptocurrency industry analyst. You write authoritative, well-researched, engaging, publication-ready articles about ${categoryTitle}. Distinguish confirmed facts, reported information, community claims, speculation, analysis, future plans, and experimental features. Never invent sources, events, figures, partnerships, or announcements.`;
 
-    const userPrompt = `Write a professional article about "${categoryTitle}".
+    const userPrompt = `Write today's professional article about the topic "${categoryTitle}".
 
-Requirements:
-- Today's date is ${today}. Make the article timely and relevant to current trends.
-- Target length: approximately ${wordCount} words.
-- Format the article body as clean HTML using <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags. Do NOT include <html>, <head>, <body>, or <h1> tags.
-- Write an engaging, specific title (not generic). The title must be unique and include a fresh angle.
-- Write a compelling excerpt/summary of maximum 250 characters (plain text, no HTML).
+DATE
+Today's date is ${today}.
+
+MOST IMPORTANT: DO NOT REPEAT PREVIOUS ARTICLES
+This is part of a daily news and analysis series. Before writing, study the recent articles listed below and deliberately choose a materially different subject, development, question, event, or analytical angle. Do not simply change the date, title, price figures, paragraph order, or wording. Do not repeat the same introduction, conclusion, Protocol or upgrade narrative, utility-versus-price discussion, developer narrative, DEX narrative, AI narrative, community-growth narrative, or other major talking points unless there is a new material development and a clearly different question.
+
+RECENT ARTICLES TO AVOID REPEATING
+${recentArticleContext}
+
+FRESHNESS AND ANGLE ROTATION
+Prioritize the most newsworthy and underreported development available on ${today}. Rotate among ecosystem developments, applications and adoption, developer activity, browser or node developments, AI and distributed computing, payments and merchants, commerce, technical upgrades, smart contracts, DeFi, DEX or AMM activity, Launchpad, KYC and digital identity, PiVerify, Pi Sign-in, governance, community initiatives, Mainnet and migration, token supply and lockups, exchange and market developments, developer tools and APIs, security, regulation, partnerships, geographic adoption, Testnet experiments, or a specific newly announced development. These are examples, not a fixed list. If no material update exists in a familiar theme, choose another current angle instead of forcing repetition.
+
+DAILY NOVELTY RULE
+The article must answer at least one question that the recent articles did not answer, such as: What changed? Why now? What does an announcement enable? What problem is being solved? Who benefits? What could prevent success? What evidence shows adoption? What is the next bottleneck? Make the new question explicit through the reporting and analysis.
+
+RESEARCH AND EVIDENCE
+Use the latest available information as of ${today}. Prioritize official announcements, developer documentation, technical updates, official blog and social channels, reliable market data, reputable technology and cryptocurrency publications, and relevant developer or ecosystem information. Clearly label what is confirmed, reported, claimed, speculative, planned, tested, experimental, or launched. Never present rumors, unverified partnerships, unofficial price targets, or social-media claims as facts. Use current data only when it supports the story; do not make price movement the central story without a genuine market event. Avoid recycling statistics unless directly relevant to the new development.
+
+ARTICLE REQUIREMENTS
+- Target approximately ${wordCount} words.
+- Use a professional journalistic style with a strong news-driven opening.
+- Explain technical concepts clearly and connect the story to broader cryptocurrency, blockchain, AI, fintech, or Web3 trends where useful.
+- Include specific evidence and dates, acknowledge uncertainty, avoid promotional language, exaggerated claims, investment advice, and unsupported price predictions.
+- Use a natural structure: what happened, why it matters now, context, evidence, industry implications, challenges or unanswered questions, and what to watch next. Do not force this structure.
+- Use a unique, specific, compelling title that reflects the actual story, has a fresh angle, explains why it matters now, and does not resemble recent titles or generic update headlines.
+- Avoid template openings such as "${categoryTitle} is entering", "${categoryTitle} enters another", "The cryptocurrency community is watching", "${categoryTitle} is once again", or "The question surrounding ${categoryTitle} is".
+- Avoid template conclusions such as "The real question is", "Only time will tell", "The next chapter", or "Whether ${categoryTitle} succeeds". End naturally from the day's specific evidence.
+- Write an excerpt of no more than 250 characters that summarizes the specific story and why it matters without repeating the title.
+- Format the body as publication-ready HTML using ONLY <h2>, <h3>, <p>, <ul>, <li>, <strong>, and <em>. Do not use <html>, <head>, <body>, <h1>, <style>, <script>, <table>, Markdown, or citations inside the body.
+
+FINAL QUALITY CHECK
+Before responding, silently verify that this is genuinely different from the recent articles, contains a new development or question, uses current evidence for ${today}, separates fact from analysis, avoids reused narratives and title structures, is approximately ${wordCount} words, and gives the reader information they would not have learned from yesterday's article. If not, change the topic or angle before responding.
 
 Respond in exactly this JSON format:
 {
@@ -147,7 +198,7 @@ Return ONLY valid JSON. No markdown fences, no extra text.`;
   async function generateWithGemini(categoryTitle) {
     const client = getGeminiClient();
     const apiKey = getGeminiApiKey();
-    const { systemPrompt, userPrompt } = buildPrompts(categoryTitle);
+    const { systemPrompt, userPrompt } = await buildPrompts(categoryTitle);
 
     const preferredModels = [
       process.env.AI_GEMINI_MODEL || process.env.AI_MODEL || 'gemini-2.0-flash',
@@ -211,7 +262,7 @@ Return ONLY valid JSON. No markdown fences, no extra text.`;
 
   async function generateWithOpenAI(categoryTitle) {
     const client = getOpenAIClient();
-    const { systemPrompt, userPrompt } = buildPrompts(categoryTitle);
+    const { systemPrompt, userPrompt } = await buildPrompts(categoryTitle);
 
     const model = process.env.AI_OPENAI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini';
 
