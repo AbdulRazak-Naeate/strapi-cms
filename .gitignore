@@ -107,9 +107,14 @@ coverage
 ############################
 
 .env
+.env.production
+.env.local
 license.txt
 exports
 *.cache
 dist
 build
 .strapi-updater.json
+
+# DB backups (may contain user data — never commit)
+backups/

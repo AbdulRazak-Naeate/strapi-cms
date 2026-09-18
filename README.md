@@ -39,6 +39,36 @@ yarn build
 
 Strapi gives you many possible deployment options for your project. Find the one that suits you on the [deployment section of the documentation](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/deployment.html).
 
+### 📘 Operations & maintenance
+
+Full operational documentation lives in [docs/OPERATIONS.md](docs/OPERATIONS.md):
+
+- **Safe deploy workflow** — how to avoid Strapi's schema sync wiping tables on deploy (this bit us once — see the incident log)
+- **Maintenance scripts** — `db:check`, `db:backup`, backup restore, and data migration
+- **Local vs production database** — SQLite locally, Postgres on Heroku, and how to bridge them safely
+- **API notes** — pagination/caching defaults, anonymous like identifiers, Cloudinary transforms
+- **Incident log** — what broke, why, and the prevention for each
+
+### ⚠️ Safe deploy workflow (IMPORTANT — read before deploying)
+
+Strapi's schema sync runs at every boot and **drops any table not defined in the deployed build's content-types**. Deploying an old build (e.g. a rollback) silently deletes tables like `article_likes` and all their data. This actually happened on 2026-09-18.
+
+**Always run this before `git push heroku` / any production deploy:**
+
+```bash
+DATABASE_URL="postgres://..." npm run db:check   # exits 1 if the build would drop tables
+DATABASE_URL="postgres://..." npm run db:backup  # JSON snapshot of all content tables to backups/
+```
+
+- `db:check` compares the content-types in your code against Strapi's schema registry in Postgres. `✅ SAFE` = go ahead; `🚨 DANGER` = this build would drop tables — stop.
+- `db:backup` writes `backups/backup-<timestamp>.json` (gitignored). Run it before risky deploys so a wipe is recoverable.
+
+Recommended deploy sequence:
+
+```bash
+DATABASE_URL="..." npm run db:check && DATABASE_URL="..." npm run db:backup && git push heroku master
+```
+
 ## 📚 Learn more
 
 - [Resource center](https://strapi.io/resource-center) - Strapi resource center.

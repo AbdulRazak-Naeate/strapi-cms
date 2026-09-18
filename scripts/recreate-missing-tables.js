@@ -52,7 +52,6 @@ async function createTables(client) {
       CONSTRAINT "article_likes_article_links_pkey" PRIMARY KEY ("id")
     );
   `);
-  await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "article_likes_article_links_unique" ON "article_likes_article_links" ("article_like_id", "article_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "article_likes_article_links_fk" ON "article_likes_article_links" ("article_like_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "article_likes_article_links_inv_fk" ON "article_likes_article_links" ("article_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "article_likes_article_links_order_fk" ON "article_likes_article_links" ("article_like_order");`);
@@ -61,6 +60,10 @@ async function createTables(client) {
       ADD CONSTRAINT "article_likes_article_links_fk" FOREIGN KEY ("article_like_id") REFERENCES "article_likes"("id") ON DELETE CASCADE,
       ADD CONSTRAINT "article_likes_article_links_inv_fk" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE CASCADE;
   `);
+  // Strapi v4 expects the unique as a TABLE CONSTRAINT (not a plain unique index),
+  // otherwise its schema diff crashes trying to DROP CONSTRAINT on restart.
+  await client.query(`ALTER TABLE "article_likes_article_links" DROP CONSTRAINT IF EXISTS "article_likes_article_links_unique";`);
+  await client.query(`ALTER TABLE "article_likes_article_links" ADD CONSTRAINT "article_likes_article_links_unique" UNIQUE ("article_like_id", "article_id");`);
 
   // ── article_likes_user_links (optional user relation) ────────────────
   await client.query(`
@@ -72,7 +75,6 @@ async function createTables(client) {
       CONSTRAINT "article_likes_user_links_pkey" PRIMARY KEY ("id")
     );
   `);
-  await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "article_likes_user_links_unique" ON "article_likes_user_links" ("article_like_id", "user_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "article_likes_user_links_fk" ON "article_likes_user_links" ("article_like_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "article_likes_user_links_inv_fk" ON "article_likes_user_links" ("user_id");`);
   await client.query(`
@@ -80,6 +82,8 @@ async function createTables(client) {
       ADD CONSTRAINT "article_likes_user_links_fk" FOREIGN KEY ("article_like_id") REFERENCES "article_likes"("id") ON DELETE CASCADE,
       ADD CONSTRAINT "article_likes_user_links_inv_fk" FOREIGN KEY ("user_id") REFERENCES "up_users"("id") ON DELETE CASCADE;
   `);
+  await client.query(`ALTER TABLE "article_likes_user_links" DROP CONSTRAINT IF EXISTS "article_likes_user_links_unique";`);
+  await client.query(`ALTER TABLE "article_likes_user_links" ADD CONSTRAINT "article_likes_user_links_unique" UNIQUE ("article_like_id", "user_id");`);
 
   // ── user_activities ──────────────────────────────────────────────────
   await client.query(`
@@ -107,7 +111,6 @@ async function createTables(client) {
       CONSTRAINT "user_activities_article_links_pkey" PRIMARY KEY ("id")
     );
   `);
-  await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "user_activities_article_links_unique" ON "user_activities_article_links" ("user_activity_id", "article_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "user_activities_article_links_fk" ON "user_activities_article_links" ("user_activity_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "user_activities_article_links_inv_fk" ON "user_activities_article_links" ("article_id");`);
   await client.query(`
@@ -115,6 +118,8 @@ async function createTables(client) {
       ADD CONSTRAINT "user_activities_article_links_fk" FOREIGN KEY ("user_activity_id") REFERENCES "user_activities"("id") ON DELETE CASCADE,
       ADD CONSTRAINT "user_activities_article_links_inv_fk" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE CASCADE;
   `);
+  await client.query(`ALTER TABLE "user_activities_article_links" DROP CONSTRAINT IF EXISTS "user_activities_article_links_unique";`);
+  await client.query(`ALTER TABLE "user_activities_article_links" ADD CONSTRAINT "user_activities_article_links_unique" UNIQUE ("user_activity_id", "article_id");`);
 
   // ── user_activities_user_links ───────────────────────────────────────
   await client.query(`
@@ -126,7 +131,6 @@ async function createTables(client) {
       CONSTRAINT "user_activities_user_links_pkey" PRIMARY KEY ("id")
     );
   `);
-  await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "user_activities_user_links_unique" ON "user_activities_user_links" ("user_activity_id", "user_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "user_activities_user_links_fk" ON "user_activities_user_links" ("user_activity_id");`);
   await client.query(`CREATE INDEX IF NOT EXISTS "user_activities_user_links_inv_fk" ON "user_activities_user_links" ("user_id");`);
   await client.query(`
@@ -134,6 +138,8 @@ async function createTables(client) {
       ADD CONSTRAINT "user_activities_user_links_fk" FOREIGN KEY ("user_activity_id") REFERENCES "user_activities"("id") ON DELETE CASCADE,
       ADD CONSTRAINT "user_activities_user_links_inv_fk" FOREIGN KEY ("user_id") REFERENCES "up_users"("id") ON DELETE CASCADE;
   `);
+  await client.query(`ALTER TABLE "user_activities_user_links" DROP CONSTRAINT IF EXISTS "user_activities_user_links_unique";`);
+  await client.query(`ALTER TABLE "user_activities_user_links" ADD CONSTRAINT "user_activities_user_links_unique" UNIQUE ("user_activity_id", "user_id");`);
 }
 
 async function restoreLikes(client) {

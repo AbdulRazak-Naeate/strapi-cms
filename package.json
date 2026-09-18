@@ -7,7 +7,9 @@
     "develop": "node ./node_modules/@strapi/strapi/bin/strapi.js develop",
     "start": "node ./node_modules/@strapi/strapi/bin/strapi.js start",
     "build": "node ./node_modules/@strapi/strapi/bin/strapi.js build",
-    "strapi": "node ./node_modules/@strapi/strapi/bin/strapi.js"
+    "strapi": "node ./node_modules/@strapi/strapi/bin/strapi.js",
+    "db:check": "node scripts/db-safety-check.js",
+    "db:backup": "node scripts/export-backup.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
