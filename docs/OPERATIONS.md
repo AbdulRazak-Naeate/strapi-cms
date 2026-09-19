@@ -9,11 +9,31 @@ Operational procedures, maintenance scripts, and incident history for the NTS St
 
 ## ⚠️ Golden rule of deployment
 
+> **Automated guardrail:** the repo's `Procfile` defines `release: npm run db:check`. Heroku runs it before every new release — deploys, config-var changes, pipeline promotions, **and rollbacks**. If the check detects tables that this build would drop, it exits 1 and **the release is aborted**; the current (safe) release keeps serving. The manual steps below are the local second line of defense.
+
 **Strapi's schema sync runs at every boot and drops any table not defined in the deployed build's content-types.**
 
 Deploying (or restarting, or rolling back to) a build that predates a content-type **silently deletes that content-type's tables and all their data**. This actually happened on 2026-09-18: an outdated Heroku build dropped `article_likes` and `user_activities`, taking 647 likes with it.
 
-### Safe deploy workflow (run before every production deploy)
+### Automated guard: release-phase task
+
+The repo has a `Procfile` with:
+
+```
+release: npm run db:check
+web:     npm run start
+```
+
+Heroku runs the release command in a one-off dyno **before every new release** — deploys, config-var changes, pipeline promotions, **and rollbacks**. If `db:check` exits non-zero, **the release is aborted and the current (safe) release keeps running**. This means:
+
+- ✅ A deploy of a build missing content-types is blocked before it can boot
+- ✅ A **rollback** to an old build is blocked too (the exact incident scenario)
+- ℹ️ `db:check` exits 0 on setup errors while on Heroku (`DYNO` set) — a missing registry or transient DB outage logs a warning but never blocks a deploy; the check only blocks when it positively detects tables that would be dropped
+- 📧 Heroku emails you on release-phase failures; see output with `heroku releases:output <version> -a naeatestudio-cms`
+
+To bypass the guard deliberately (e.g. you really do want to deploy without a content-type after backing up), remove the `release:` line from the Procfile in a dedicated commit, deploy, then restore it — the friction is intentional.
+
+### Manual pre-deploy workflow (local double-check)
 
 ```bash
 # 1. Verify the build is safe to boot (exits 1 if it would drop tables)
@@ -22,7 +42,7 @@ DATABASE_URL="postgres://..." npm run db:check
 # 2. Snapshot all content data
 DATABASE_URL="postgres://..." npm run db:backup
 
-# 3. Only then deploy
+# 3. Only then deploy (Heroku also re-runs db:check automatically in release phase)
 git push heroku master
 ```
 
@@ -39,7 +59,8 @@ git push heroku master
 | Output | Meaning | Action |
 |--------|---------|--------|
 | `✅ SAFE` | Every DB table is covered by this build's content-types | Deploy is safe |
-| `🚨 DANGER` + table list | This build would DROP those tables at boot | **Do not deploy.** Deploy a build containing all content-types, or back up first and accept the loss |
+| `🚨 DANGER` + table list | This build would DROP those tables at boot | **Deploy is blocked** (release phase fails). Deploy a build containing all content-types, or back up first and accept the loss |
+| `⚠️ Could not read strapi_database_schema` | Registry missing/unreachable | Warning only on Heroku — deploy proceeds; locally exits 1 |
 
 This applies **double for rollbacks** — an old build is exactly what triggers the wipe.
 
@@ -51,7 +72,7 @@ All scripts are idempotent unless noted. They resolve `DATABASE_URL` from the en
 
 | Script | npm alias | Purpose |
 |--------|-----------|---------|
-| `scripts/db-safety-check.js` | `npm run db:check` | Pre-deploy guard: fails if booting this build would drop DB tables |
+| `scripts/db-safety-check.js` | `npm run db:check` | Pre-deploy guard: fails if booting this build would drop DB tables. Runs automatically on every Heroku deploy/rollback via the Procfile release-phase task |
 | `scripts/export-backup.js` | `npm run db:backup` | JSON snapshot of all content tables → `backups/backup-<timestamp>.json` |
 | `scripts/migrate-backup-to-pg.js` | — | Import `pifiat_articles.json` + image cache into Postgres (upserts, re-runnable) |
 | `scripts/recreate-missing-tables.js` | — | Recreate Strapi-v4-conformant `article_likes` / `user_activities` tables + restore likes |
