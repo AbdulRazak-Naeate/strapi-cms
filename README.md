@@ -47,7 +47,7 @@ Full operational documentation lives in [docs/OPERATIONS.md](docs/OPERATIONS.md)
 - **Automated guardrail** — a Procfile release-phase task runs `npm run db:check` on every Heroku deploy *and every rollback*; a build that would drop tables is blocked before it boots
 - **Maintenance scripts** — `npm run db:check` (pre-deploy guard), `npm run db:backup` (JSON snapshot), backup restore, and data migration
 - **Local vs production database** — SQLite locally, Postgres on Heroku, and how to bridge them safely
-- **API notes** — pagination/caching defaults, anonymous like identifiers, Cloudinary transforms
+- **API notes** — pagination/caching defaults, filtering articles by category, anonymous like identifiers, Cloudinary transforms
 - **Incident log** — what broke, why, and the prevention for each
 
 ## 📚 Learn more

@@ -9,7 +9,8 @@
     "build": "node ./node_modules/@strapi/strapi/bin/strapi.js build",
     "strapi": "node ./node_modules/@strapi/strapi/bin/strapi.js",
     "db:check": "node scripts/db-safety-check.js",
-    "db:backup": "node scripts/export-backup.js"
+    "db:backup": "node scripts/export-backup.js",
+    "db:backfill": "node scripts/backfill-cloudinary-lossy.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

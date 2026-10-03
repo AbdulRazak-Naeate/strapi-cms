@@ -150,6 +150,28 @@ heroku config:get DATABASE_URL -a naeatestudio-cms
 - List responses are cached in-memory for 60s with `X-Cache: HIT/MISS` headers. Like/unlike and admin edits invalidate the cache.
 - Cache is per-dyno — fine for a single dyno; swap the helper internals for Redis if scaling out (interface stays the same).
 
+### Fetching articles by category
+
+Articles are filtered by their related categories with Strapi's built-in deep filtering — **no custom route needed**:
+
+```text
+# by category title (URL-encode spaces as %20)
+GET /api/articles?filters[categories][title][$eq]=Pi%20Network&populate=*&sort=publishedAt:desc&pagination[pageSize]=10
+
+# by category id
+GET /api/articles?filters[categories][id][$eq]=1&populate=*
+
+# the categories list itself (public read enabled)
+GET /api/categories
+```
+
+Notes:
+
+- `[$eq]` on title is **case-sensitive** — `pi network` will not match. Use `[$eqi]` for case-insensitive comparison.
+- Filter params combine normally with `pagination[...]`, `sort`, and `populate`.
+- **Permission gotcha:** the Public role must have `find` on every content-type you populate or filter on. If a role can't read a related type, Strapi silently **strips that field from the response** (and 403s the direct endpoint) instead of erroring. This bit us: `categories` vanished from every article response until `api::category.category.find` / `findOne` were granted to Public (2026-09-19). Remember this for any future public relation (e.g. author profiles).
+- Category IDs as of 2026-09-19: 1 Pi Network · 2 JavaScript · 3 Python · 7 Web · 8 Crypto · 9 AI · 10 Business · 11 Technology.
+
 ### Anonymous likes
 
 Likes are identified by a client-generated device ID, sent as `identifier`. **DELETE request bodies are not parsed by Strapi's body middleware** (`koa-body` `parsedMethods` defaults to POST/PUT/PATCH only), so unlike calls must send the identifier in the URL or a header:
@@ -167,7 +189,7 @@ fetch(`/api/articles/${id}/like?identifier=${deviceId}`, { method: 'DELETE' });
 
 ### Cloudinary delivery transforms
 
-All stored image URLs carry `f_auto,q_auto` after `/upload/` (auto format + lossy auto quality). New uploads get it via the upload extension (`src/extensions/upload/strapi-server.js`); existing URLs were backfilled. Originals remain intact — removing the segment fetches the raw asset.
+All stored image URLs carry `f_auto,q_auto,fl_lossy` after `/upload/` (auto format + auto quality + explicit lossy flag). New uploads get it via the upload extension (`src/extensions/upload/strapi-server.js`); existing URLs were backfilled with `scripts/backfill-cloudinary-lossy.js` (re-run it after adding a Cloudinary account — it upgrades older `f_auto,q_auto` URLs too). The transform is a URL segment only — originals remain intact, removing the segment fetches the raw asset.
 
 ---
 

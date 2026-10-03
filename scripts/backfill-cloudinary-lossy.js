@@ -1,41 +1,56 @@
 /**
- * One-off backfill: add the Cloudinary "lossy" transform (f_auto,q_auto) to
- * existing file URLs in the production PostgreSQL database.
+ * Backfill: add the Cloudinary format + lossy transform
+ * (f_auto,q_auto,fl_lossy) to existing file URLs in the production
+ * PostgreSQL database.
  *
- *   DATABASE_URL="postgres://..." node scripts/backfill-cloudinary-lossy.js
+ *   npm run db:backfill
  *
- * Idempotent — URLs already containing the transform are left untouched.
- * Update and delete the file after running.
+ * DATABASE_URL is resolved automatically (env, .env.production, .env.local,
+ * .env — see scripts/lib/db-url.js).
+ *
+ * Also upgrades URLs saved by older versions of this script (f_auto,q_auto →
+ * f_auto,q_auto,fl_lossy). Idempotent — URLs already containing fl_lossy are
+ * left untouched. Run, then update and delete the file after running.
  */
 
 const { Pool } = require('pg');
 const { parse } = require('pg-connection-string');
+const { resolveDatabaseUrl } = require('./lib/db-url');
 
-const TRANSFORM = 'f_auto,q_auto';
-const UPLOAD_SEGMENT = /\/upload\//;
+const TRANSFORM = 'f_auto,q_auto,fl_lossy';
 
-function applyLossyTransform(url) {
-  if (
-    typeof url === 'string' &&
-    !url.includes(`/${TRANSFORM}/`) &&
-    UPLOAD_SEGMENT.test(url)
-  ) {
-    return url.replace(UPLOAD_SEGMENT, `/upload/${TRANSFORM}/`);
-  }
-  return url;
+/**
+ * Applies the transform to EVERY Cloudinary URL in the value — the `formats`
+ * JSON contains several URLs (large/small/thumbnail/...), so this must be
+ * global, and each occurrence is handled independently (mixed states allowed).
+ */
+function applyLossyTransform(str) {
+  if (typeof str !== 'string' || !str.includes('/upload/')) return str;
+  let out = str;
+  // 1. comma form f_auto,q_auto → add fl_lossy (skip when already present)
+  out = out.replace(/\/upload\/f_auto,q_auto(?!,fl_lossy)\//g, '/upload/f_auto,q_auto,fl_lossy/');
+  // 2. slash form f_auto/q_auto → add fl_lossy (skip when already present)
+  out = out.replace(/\/upload\/f_auto\/q_auto\/(?!fl_lossy\/)/g, '/upload/f_auto/q_auto/fl_lossy/');
+  // 3. bare segment after /upload/ (version, folder, other transform) → insert.
+  //    Runs last; the f_auto lookahead protects the forms produced above.
+  out = out.replace(/\/upload\/(?!f_auto[,/])/g, `/upload/${TRANSFORM}/`);
+  return out;
 }
 
 function transformJsonField(value) {
   if (!value) return value;
-  const str = typeof value === 'string' ? value : JSON.stringify(value);
-  const transformed = applyLossyTransform(str);
-  return transformed;
+  try {
+    const str = typeof value === 'string' ? value : JSON.stringify(value);
+    return JSON.parse(applyLossyTransform(str));
+  } catch (e) {
+    return value;
+  }
 }
 
 async function main() {
-  const dbUrl = process.env.DATABASE_URL;
+  const dbUrl = resolveDatabaseUrl();
   if (!dbUrl) {
-    console.error('ERROR: DATABASE_URL not set');
+    console.error('ERROR: DATABASE_URL not found (set it in .env.production or pass DATABASE_URL="..." on the command line)');
     process.exit(1);
   }
 
@@ -55,7 +70,10 @@ async function main() {
       const newPreview = applyLossyTransform(row.preview_url);
       const newFormats = transformJsonField(row.formats);
 
-      if (newUrl === row.url && newPreview === row.preview_url && newFormats === row.formats) {
+      // pg parses JSON columns into objects — compare via JSON string, not ===.
+      const before = JSON.stringify(row.formats ?? null);
+      const after = JSON.stringify(newFormats ?? null);
+      if (newUrl === row.url && newPreview === row.preview_url && after === before) {
         continue; // already has the transform
       }
 
