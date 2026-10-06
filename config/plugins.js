@@ -3,7 +3,9 @@ module.exports = ({ env }) => ({
     config: {
       provider: 'cloudinary',
       providerOptions: {
-        cloud_name: env('CLOUDINARY_NAME'),
+        // Default to the current cloud so new uploads never fall back to the
+        // old (disabled) dliwqshtz account when CLOUDINARY_NAME is unset.
+        cloud_name: env('CLOUDINARY_NAME', 'rknccgyz'),
         api_key: env('CLOUDINARY_KEY'),
         api_secret: env('CLOUDINARY_SECRET'),
       },

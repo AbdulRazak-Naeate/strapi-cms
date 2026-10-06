@@ -76,7 +76,7 @@ All scripts are idempotent unless noted. They resolve `DATABASE_URL` from the en
 | `scripts/export-backup.js` | `npm run db:backup` | JSON snapshot of all content tables → `backups/backup-<timestamp>.json` |
 | `scripts/migrate-backup-to-pg.js` | — | Import `pifiat_articles.json` + image cache into Postgres (upserts, re-runnable) |
 | `scripts/recreate-missing-tables.js` | — | Recreate Strapi-v4-conformant `article_likes` / `user_activities` tables + restore likes |
-| `scripts/backfill-cloudinary-lossy.js` | — | One-off: add `f_auto,q_auto` transform to existing Cloudinary URLs (already applied) |
+| `scripts/backfill-cloudinary-lossy.js` | `npm run db:backfill` | Add the `f_auto,q_auto,fl_lossy` transform to all Cloudinary URLs in the DB (`url`, `preview_url`, `formats`). Idempotent — safe to re-run; also upgrades older `f_auto,q_auto`-only URLs |
 
 ### `db:check` — pre-deploy safety check
 
@@ -189,11 +189,44 @@ fetch(`/api/articles/${id}/like?identifier=${deviceId}`, { method: 'DELETE' });
 
 ### Cloudinary delivery transforms
 
-All stored image URLs carry `f_auto,q_auto,fl_lossy` after `/upload/` (auto format + auto quality + explicit lossy flag). New uploads get it via the upload extension (`src/extensions/upload/strapi-server.js`); existing URLs were backfilled with `scripts/backfill-cloudinary-lossy.js` (re-run it after adding a Cloudinary account — it upgrades older `f_auto,q_auto` URLs too). The transform is a URL segment only — originals remain intact, removing the segment fetches the raw asset.
+All stored image URLs carry `f_auto,q_auto,fl_lossy` after `/upload/` (auto format + auto quality + explicit lossy flag):
+
+- **New uploads** — applied by the upload extension (`src/extensions/upload/strapi-server.js`) on `url`, `previewUrl`, and every entry inside `formats`.
+- **Existing rows** — `npm run db:backfill` rewrites all Cloudinary URLs in `files` (`url`, `preview_url`, `formats`). Idempotent: re-run it any time (e.g. after adding a Cloudinary account, or to upgrade older `f_auto,q_auto`-only URLs). A clean run reports `0/28`.
+
+### Cloudinary account (cloud name)
+
+Uploads go to the cloud named by `CLOUDINARY_NAME` (with `CLOUDINARY_KEY`/`CLOUDINARY_SECRET` belonging to that same cloud), see `config/plugins.js`. `cloud_name` also has a hard default of **`rknccgyz`** (the current cloud), so a missing/renamed env var can never send new uploads to the retired `dliwqshtz` account.
+
+State as of 2026-10-06:
+
+- New cloud `rknccgyz` — active; production (`CLOUDINARY_*` config vars on Heroku) and local `.env` point here.
+- Old cloud `dliwqshtz` — account **disabled** (all URLs and API calls return `401 disabled customer`). 27 `files` rows (100 URL occurrences across `url`/`preview_url`/`formats`) still reference it; their assets were never migrated (404 on the new cloud). These are being fixed by manual re-upload — after re-uploading, re-point the article `image` relations and delete the old rows, then run `npm run db:backfill` (no-op for URLs already correct).
+
+Implementation notes (learned the hard way — see incident log):
+
+- The transform must be **global**: the `formats` JSON contains several URLs (large/small/medium/thumbnail), so a non-global `String.replace` only fixes the first one.
+- Each URL occurrence is handled independently — mixed states in one JSON (some done, some bare) all get normalized.
+- Never double-transforms: URLs already carrying `fl_lossy` are skipped via regex lookahead, not a whole-string early return.
+- The transform is a URL segment only — originals remain intact; removing the segment fetches the raw asset.
+
+```bash
+npm run db:backfill   # DATABASE_URL auto-resolved from .env.production etc.
+```
 
 ---
 
 ## Incident log
+
+### 2026-10-03 — `fl_lossy` flag missing; partial transform of `formats` URLs
+
+**Symptom:** New uploads showed `f_auto,q_auto` but not the `fl_lossy` flag; `npm run db:backfill` reported `28/28 updated` even on immediate re-runs.
+
+**Root cause:** Two stacked bugs in the transform code: (1) `String.replace` without the `g` flag replaced only the **first** `/upload/` occurrence — and `formats` is a JSON holding 4+ URLs, so most size variants stayed bare; a whole-string `includes('fl_lossy')` early return then skipped JSONs where only one entry was done. (2) `transformJsonField` returned a string while `pg` returns JSON columns as objects, so the equality check never matched and every row was re-UPDATED on every run.
+
+**Fix:** Global per-occurrence regex transforms that normalize each URL independently (comma form, slash form, bare — all handled), `JSON.parse` round-trip in the backfill, and comparison via `JSON.stringify`. Verified: 105/105 Cloudinary URLs across all 28 files carry the flag; second run reports `0/28`.
+
+**Lesson:** when transforming URLs inside JSON columns, treat each occurrence separately and never early-return on partial content; always verify idempotency by running the script twice.
 
 ### 2026-09-18 — Schema sync wiped `article_likes` & `user_activities`
 
