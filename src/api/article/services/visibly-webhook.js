@@ -32,10 +32,7 @@ function validSignature(signature, rawBody, secret) {
 }
 
 function getPublicUrl(slug) {
-  const baseUrl = process.env.VISIBLY_PUBLIC_SITE_URL;
-  if (!baseUrl) {
-    throw new Error('VISIBLY_PUBLIC_SITE_URL is not configured');
-  }
+  const baseUrl = process.env.VISIBLY_PUBLIC_SITE_URL || 'https://www.pifiatconvert.com';
 
   const parsedBaseUrl = new URL(baseUrl);
   if (parsedBaseUrl.protocol !== 'https:') {

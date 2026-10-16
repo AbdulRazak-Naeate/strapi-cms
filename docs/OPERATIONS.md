@@ -88,8 +88,9 @@ Exit codes: `0` safe · `1` would drop tables · `2` setup error (e.g. missing `
 
 ### Visibly article webhook
 
-Configure `VISIBLY_WEBHOOK_TOKEN` to the exact bearer token configured in Visibly
-and set `VISIBLY_PUBLIC_SITE_URL` to the public website origin. The endpoint is
+Configure `VISIBLY_WEBHOOK_TOKEN` to the exact bearer token configured in Visibly.
+`VISIBLY_PUBLIC_SITE_URL` is optional and defaults to `https://www.pifiatconvert.com`.
+The endpoint is
 `POST /api/visibly/webhook`; it optionally verifies `X-Visibly-Signature` against
 the raw JSON body using the bearer token as the HMAC-SHA256 secret. Test requests
 with `event: "test"` return `https://mysite.com/test` without storing an article.
