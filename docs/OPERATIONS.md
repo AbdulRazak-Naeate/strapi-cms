@@ -86,6 +86,25 @@ Strapi-internal tables (`strapi_*`, `admin_*`, `up_*`, `files*`, `upload_*`, `i1
 
 Exit codes: `0` safe · `1` would drop tables · `2` setup error (e.g. missing `DATABASE_URL`).
 
+### Visibly article webhook
+
+Configure `VISIBLY_WEBHOOK_TOKEN` to the exact bearer token configured in Visibly
+and set `VISIBLY_PUBLIC_SITE_URL` to the public website origin. The endpoint is
+`POST /api/visibly/webhook`; it optionally verifies `X-Visibly-Signature` against
+the raw JSON body using the bearer token as the HMAC-SHA256 secret. Test requests
+with `event: "test"` return `https://mysite.com/test` without storing an article.
+Published article responses use `VISIBLY_PUBLIC_SITE_URL/blog/<slug>`.
+
+Visibly content is mapped to the existing Article fields (`title`, HTML `content`,
+`Excerpt`, `date_created`, and the hero media relation). Hero and infographic
+images are downloaded and uploaded through Strapi's configured upload provider;
+they are not hotlinked. Because the Article schema has no Visibly ID, slug, or
+infographic field, a separate `visibly_article_mappings` content-type table keeps
+the Visibly ID, slug, media references, and other source metadata. The Article
+schema is unchanged; article content is written through Strapi's existing Article
+model. The mapping table is represented by a content-type schema so `db:check`
+recognizes it on future deployments.
+
 ### `db:backup` — JSON snapshot
 
 Exports every non-internal table to `backups/backup-<ISO-timestamp>.json` as a plain `{ table: rows[] }` map. The `backups/` directory is gitignored (may contain user data).

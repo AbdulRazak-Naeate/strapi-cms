@@ -57,6 +57,10 @@ module.exports = createCoreController(ARTICLE_UID, ({ strapi }) => ({
 		return response;
 	},
 
+	async visiblyWebhook(ctx) {
+		return strapi.service('api::article.visibly-webhook').receive(ctx);
+	},
+
 	async limitedAttributes(ctx) {
 		const { title } = ctx.query;
 		const populateFields = ['content', 'image', 'title'];

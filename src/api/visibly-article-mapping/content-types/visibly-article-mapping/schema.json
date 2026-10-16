@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "visibly_article_mappings",
+  "info": {
+    "singularName": "visibly-article-mapping",
+    "pluralName": "visibly-article-mappings",
+    "displayName": "Visibly Article Mapping"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "visiblyId": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "articleId": {
+      "type": "integer"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "sourceMetadata": {
+      "type": "json"
+    },
+    "heroImageMediaId": {
+      "type": "integer"
+    },
+    "infographicImageMediaId": {
+      "type": "integer"
+    }
+  }
+}
